@@ -230,7 +230,6 @@ class GraphLayer(Layer):
         for _ in range(self.steps):
             output = gru_unit(self.support, output, self.vars, self.act,
                               self.mask, 1-self.dropout, self.sparse_inputs)
-        print("@@@@@@@@@@@@@@@@@@",output.name)
 
         return output
 
@@ -279,7 +278,6 @@ class ReadoutLayer(Layer):
 
         # classification
         output = tf.matmul(g, self.vars['weights_mlp']) + self.vars['bias_mlp']
-        print("!!!!!!!!!!!!!!",output.name)
 
         return output
 

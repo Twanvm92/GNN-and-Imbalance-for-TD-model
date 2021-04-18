@@ -58,16 +58,9 @@ class Model(object):
         self._loss()
         self._accuracy()
 
-        # globalStep = tf.Variable(0, name="globalStep", trainable=False)
-        print("self.globalStep",self.globalStep)
-
-        # 计算梯度,得到梯度和变量
         gradsAndVars = self.optimizer.compute_gradients(self.loss)
-        # 将梯度应用到变量下，生成训练器
         self.opt_op = self.optimizer.apply_gradients(gradsAndVars, global_step=self.globalStep)
-        # self.opt_op = self.optimizer.apply_gradients(gradsAndVars, global_step=globalStep)
 
-        # self.opt_op = self.optimizer.minimize(self.loss,global_step=globalStep)
 
     def predict(self):
         pass
@@ -100,10 +93,8 @@ class MLP(Model):
 
         self.inputs = placeholders['features']
         self.input_dim = input_dim
-        # self.input_dim = self.inputs.get_shape().as_list()[1]  # To be supported in future Tensorflow versions
         self.output_dim = placeholders['labels'].get_shape().as_list()[1]
         self.placeholders = placeholders
-
         self.optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
 
         self.build()
@@ -149,41 +140,26 @@ class GNN(Model):
         self.output_dim = placeholders['labels'].get_shape().as_list()[1]
         self.mask = placeholders['mask']
         self.placeholders = placeholders
-        # self.epoch = placeholders['epoch']  # 获取当前epoch 2020 7 20
-        self.steps_per_epoch = placeholders['steps_per_epoch']  # 一个epoch多少batch_size 2020 9 20
-        self.d_lossweight = placeholders['d_lossweight']  # 获取加权系数 2020 7 22
+        self.steps_per_epoch = placeholders['steps_per_epoch']
+        self.d_lossweight = placeholders['d_lossweight']
 
         self.globalStep = tf.Variable(0, name="globalStep", trainable=False)
         self.learning_rate = tf.train.polynomial_decay(FLAGS.learning_rate, self.globalStep,
                                                        self.steps_per_epoch*FLAGS.epochs, 1e-5,
                                                        power=1)
-
-        # self.learning_rate = tf.train.polynomial_decay(FLAGS.learning_rate, self.epoch,
-        #                                           FLAGS.epochs, 1e-4,
-        #                                           power=1)
         self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
-
-        # self.optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
-
         print('build...')
         self.build()
 
     def _loss(self):
         # Weight decay loss
-        # for var in self.layers[0].vars.values():
-        #     self.loss += FLAGS.weight_decay * tf.nn.l2_loss(var)
-
         for var in tf.trainable_variables():
             if 'weights' in var.name or 'bias' in var.name:
                 self.loss += FLAGS.weight_decay * tf.nn.l2_loss(var)
 
         # Cross entropy error
-
-        # self.loss += focal_loss_weight(self.outputs, self.placeholders['labels'],self.d_lossweight)
         # self.loss += weighted_cross_entropy(self.outputs, self.placeholders['labels'],self.d_lossweight)
-        # self.loss += focal_loss_fixed_new(self.outputs, self.placeholders['labels'])
-        # self.loss += my_focal_loss_fixed_new(self.outputs, self.placeholders['labels'])
-        self.loss += one_focal_loss_fixed_new(self.outputs, self.placeholders['labels'],self.d_lossweight) # 正在使用
+        self.loss += focal_loss(self.outputs, self.placeholders['labels'],self.d_lossweight)
         # self.loss += DSC_loss(self.outputs, self.placeholders['labels'])
         # self.loss += ghm_class_loss(self.outputs, self.placeholders['labels'])
         # self.loss += dice_loss(self.outputs, self.placeholders['labels'])

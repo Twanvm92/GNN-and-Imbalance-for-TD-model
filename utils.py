@@ -3,8 +3,6 @@ import pickle as pkl
 import scipy.sparse as sp
 from scipy.sparse.linalg.eigen.arpack import eigsh
 import sys
-import random
-import re
 from tqdm import tqdm
 # import sparse
 
@@ -51,8 +49,6 @@ def load_data(dataset_str):
                 objects.append(pkl.load(f))
 
     x_adj, x_embed, y, tx_adj, tx_embed, ty, allx_adj, allx_embed, ally = tuple(objects)
-    # train_idx_ori = parse_index_file("data/{}.train.index".format(dataset_str))
-    # train_size = len(train_idx_ori)
 
     train_adj = []
     train_embed = []
@@ -89,7 +85,6 @@ def load_data(dataset_str):
     val_y = np.array(ally[len(y):len(ally)]) # train_size])
     test_y = np.array(ty)
 
-    # 训练集不平衡比例 2020 7 22
     nonSATD = 0
     SATD = 0
     for i in train_y:
@@ -97,8 +92,6 @@ def load_data(dataset_str):
             nonSATD += 1
         elif str(i) == '[0 1]':
             SATD += 1
-    print(nonSATD)
-    print(SATD)
     d_lossweight = []
     d_lossweight.append(nonSATD)
     d_lossweight.append(SATD)
@@ -181,7 +174,6 @@ def construct_feed_dict(features, support, mask, labels, placeholders):
     feed_dict.update({placeholders['features']: features})
     feed_dict.update({placeholders['support']: support})
     feed_dict.update({placeholders['mask']: mask})
-    print("features.shape",features.shape)
     feed_dict.update({placeholders['num_features_nonzero']: features[1].shape})
     return feed_dict
 
@@ -208,43 +200,3 @@ def chebyshev_polynomials(adj, k):
 
     return sparse_to_tuple(t_k)
 
-
-def loadWord2Vec(filename):
-    """Read Word Vectors"""
-    vocab = []
-    embd = []
-    word_vector_map = {}
-    file = open(filename, 'r')
-    for line in file.readlines():
-        row = line.strip().split(' ')
-        if(len(row) > 2):
-            vocab.append(row[0])
-            vector = row[1:]
-            length = len(vector)
-            for i in range(length):
-                vector[i] = float(vector[i])
-            embd.append(vector)
-            word_vector_map[row[0]] = vector
-    print('Loaded Word Vectors!')
-    file.close()
-    return vocab, embd, word_vector_map
-
-'''def clean_str(string):
-    """
-    Tokenization/string cleaning for all datasets except for SST.
-    Original taken from https://github.com/yoonkim/CNN_sentence/blob/master/process_data.py
-    """
-    string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
-    string = re.sub(r"\'s", " \'s", string)
-    string = re.sub(r"\'ve", " \'ve", string)
-    string = re.sub(r"n\'t", " n\'t", string)
-    string = re.sub(r"\'re", " \'re", string)
-    string = re.sub(r"\'d", " \'d", string)
-    string = re.sub(r"\'ll", " \'ll", string)
-    string = re.sub(r",", " , ", string)
-    string = re.sub(r"!", " ! ", string)
-    string = re.sub(r"\(", " \( ", string)
-    string = re.sub(r"\)", " \) ", string)
-    string = re.sub(r"\?", " \? ", string)
-    string = re.sub(r"\s{2,}", " ", string)
-    return string.strip().lower()'''

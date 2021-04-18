@@ -36,7 +36,6 @@ def ghm_class_loss(logits, targets, masks=None):
         masks = tf.ones_like(targets)
     valid_mask = masks > 0
     weights, tot = calc(g, valid_mask)
-    print(weights.shape)
     ghm_class_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=targets * train_mask,
                                                              logits=logits)
     ghm_class_loss = tf.reduce_sum(ghm_class_loss * weights) / tot
@@ -95,8 +94,6 @@ def calc(g, valid_mask):
     weights = weights / num_valid_bin
     return weights, tot
 
-
-
 def dice_loss(preds, labels,smooth=1): #   DL
     inse = tf.reduce_sum(preds * labels,axis=1)
     l =  tf.reduce_sum(preds * preds,axis=1)
@@ -105,74 +102,9 @@ def dice_loss(preds, labels,smooth=1): #   DL
     loss = tf.reduce_mean(1-dice)
     return loss
 
-def focal_loss_fixed(y_pred,y_true):
-
-    epsilon = 1.e-9
-    gamma = 2.
-    alpha = 0.25
-    y_pred = tf.nn.sigmoid(y_pred)
-    y_true = tf.convert_to_tensor(y_true, tf.float32)
-    y_pred = tf.convert_to_tensor(y_pred, tf.float32)
-    model_out = tf.clip_by_value(y_pred, epsilon, 1. - epsilon)  # to advoid numeric underflow
-
-    # compute cross entropy ce = ce_0 + ce_1 = - (1-y)*log(1-y_hat) - y*log(y_hat)
-    ce_0 = tf.multiply(tf.subtract(1., y_true), -tf.log(tf.subtract(1., model_out)))
-    ce_1 = tf.multiply(y_true, -tf.log(model_out))
-
-    # compute focal loss fl = fl_0 + fl_1
-    # obviously fl < ce because of the down-weighting, we can fix it by rescaling
-    # fl_0 = -(1-y_true)*(1-alpha)*((y_hat)^gamma)*log(1-y_hat) = (1-alpha)*((y_hat)^gamma)*ce_0
-    fl_0 = tf.multiply(tf.pow(model_out, gamma), ce_0)
-    fl_0 = tf.multiply(1. - alpha, fl_0)
-    # fl_1= -y_true*alpha*((1-y_hat)^gamma)*log(y_hat) = alpha*((1-y_hat)^gamma*ce_1
-    fl_1 = tf.multiply(tf.pow(tf.subtract(1., model_out), gamma), ce_1)
-    fl_1 = tf.multiply(alpha, fl_1)
-    fl = tf.add(fl_0, fl_1)
-    f1_avg = tf.reduce_mean(fl)
-    return f1_avg
-
-
-
-# def focal_loss(logits, labels,samples_per_cls):
-#     '''
-#     :param logits:  [batch_size, n_class]
-#     :param labels: [batch_size]
-#     :return: -(1-y)^r * log(y)
-#     gamma=2
-#     '''
-#     no_of_classes = 2
-#     beta = 0.9999
-#     effective_num = 1.0 - np.power(beta, samples_per_cls)
-#     weights = (1.0 - beta) / np.array(effective_num)
-#     weights = weights / np.sum(weights) * no_of_classes
-#     weights = tf.reduce_sum(weights * labels, axis=1)
-#     unweighted_loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits,labels=labels)
-#     unweighted_loss = tf.reduce_sum(unweighted_loss,axis=1)
-#     unweighted_loss /= 2
-#     # unweighted_loss = tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits,labels=labels)
-#     weights_loss = unweighted_loss*weights
-#     focal_loss = tf.reduce_mean(weights_loss)
-#     return focal_loss
-
-# def tversky_loss(y_pred, y_true): # https://www.cnblogs.com/hotsnow/p/10954624.html
-#     y_pred = tf.nn.softmax(y_pred)
-#     y_true_pos = K.flatten(y_true)
-#     y_pred_pos = K.flatten(y_pred)
-#     true_pos = K.sum(y_true_pos * y_pred_pos)
-#     false_neg = K.sum(y_true_pos * (1-y_pred_pos))
-#     false_pos = K.sum((1-y_true_pos)*y_pred_pos)
-#     alpha = 0.7
-#     # alpha = 0.3 #当alpha=0.5 的时候就是DSC方法
-#     smooth = 1
-#     pt_1 = ((true_pos + smooth)/(true_pos + alpha*false_neg + (1-alpha)*false_pos + smooth))
-#     gamma = 0.75
-#     return K.pow((1-pt_1),gamma)
-
 def xiaxin_weighted_cross_entropy(preds,labels,samples_per_cls): # 2020 7 24
-    d_lossweight =samples_per_cls[0]/samples_per_cls[1] # 跟每个数据集标签的变化而变化
-    print(" d_lossweight", d_lossweight)
+    d_lossweight =samples_per_cls[0]/samples_per_cls[1]
     class_weights = tf.constant([1.0,d_lossweight])
-    # class_weights = tf.constant([d_lossweight,1.0])
     weights = tf.reduce_sum(class_weights * labels, axis=1)
     unweighted_loss = tf.nn.softmax_cross_entropy_with_logits_v2(logits=preds, labels=labels)
     weighted_losses = unweighted_loss * weights
@@ -183,70 +115,21 @@ def xiaxin_weighted_cross_entropy(preds,labels,samples_per_cls): # 2020 7 24
 def weighted_cross_entropy(preds, labels,samples_per_cls):
     pos_weight = samples_per_cls[1]/samples_per_cls[0]
     loss = tf.nn.weighted_cross_entropy_with_logits(logits = preds,targets=labels,pos_weight=pos_weight)
-    # l2_reg_lambda=0.2 beta=0.5
-    # return tf.reduce_mean(loss)
     return tf.reduce_mean(loss)
 
-def focal_loss_fixed_new(y_pred,y_true):
-    gamma = 2
-    alpha = FLAGS.alpha
-    epsilon = 1.e-9
-    y_pred = tf.nn.softmax(y_pred)
-    y_true = tf.convert_to_tensor(y_true,tf.float32)
-    y_pred = tf.convert_to_tensor(y_pred,tf.float32)
-    model_out = tf.add(y_pred,epsilon)
-    ce = tf.multiply(y_true,-tf.log(model_out))
-    weight = tf.multiply(y_true,tf.pow(tf.subtract(1.,model_out),gamma))
-    f1 = tf.multiply(alpha,tf.multiply(weight,ce))
-    reduced_f1 = tf.reduce_max(f1,axis=1)
-    return tf.reduce_mean(reduced_f1)
-
-def my_focal_loss_fixed_new(pred,y): #https://blog.csdn.net/weixin_42956785/article/details/107350387
-    gamma = 2
-    alpha = FLAGS.alpha
-    pred = tf.nn.softmax(pred)
-    zeros = tf.zeros_like(pred, dtype=pred.dtype)
-    pos_p_sub = tf.where(y > zeros, y - pred, zeros)  # positive sample 寻找正样本，并进行填充
-
-    # For negative prediction, only need consider back part loss, front part is 0;
-    # target_tensor > zeros <=> z=1, so negative coefficient = 0.
-    neg_p_sub = tf.where(y > zeros, zeros, pred)  # negative sample 寻找负样本，并进行填充
-    per_entry_cross_ent = - alpha * (pos_p_sub ** gamma) * tf.log(tf.clip_by_value(pred, 1e-8, 1.0)) \
-                          - (1 - alpha) * (neg_p_sub ** gamma) * tf.log(tf.clip_by_value(1.0 - pred, 1e-8, 1.0))
-    return tf.reduce_mean(tf.reduce_sum(per_entry_cross_ent,axis=1))
-
-def one_focal_loss_fixed_new(pred,y,samples_per_cls): #https://github.com/ailias/Focal-Loss-implement-on-Tensorflow/blob/master/focal_loss.py 目前正在使用
+def focal_loss(pred,y,samples_per_cls):
     gamma = 2
     alpha = samples_per_cls[1] / samples_per_cls[0]
     pred = tf.nn.softmax(pred)
     zeros = array_ops.zeros_like(pred, dtype=pred.dtype)
-    pos_p_sub = array_ops.where(y > zeros, y - pred, zeros)  # positive sample 寻找正样本，并进行填充
-
+    pos_p_sub = array_ops.where(y > zeros, y - pred, zeros)  # positive sample
     # For negative prediction, only need consider back part loss, front part is 0;
     # target_tensor > zeros <=> z=1, so negative coefficient = 0.
-    neg_p_sub = array_ops.where(y > zeros, zeros, pred)  # negative sample 寻找负样本，并进行填充
+    neg_p_sub = array_ops.where(y > zeros, zeros, pred)  # negative sample
     per_entry_cross_ent = - alpha * (pos_p_sub ** gamma) * tf.log(tf.clip_by_value(pred, 1e-8, 1.0)) \
                           - (1 - alpha) * (neg_p_sub ** gamma) * tf.log(tf.clip_by_value(1.0 - pred, 1e-8, 1.0))
     return tf.reduce_mean(tf.reduce_sum(per_entry_cross_ent,axis=1))
 
-
-def focal_loss_weight(pred,y,samples_per_cls):
-    gamma = 2
-    alpha = FLAGS.alpha
-    pred = tf.nn.softmax(pred)
-    zeros = array_ops.zeros_like(pred, dtype=pred.dtype)
-    pos_p_sub = array_ops.where(y > zeros, y - pred, zeros)  # positive sample 寻找正样本，并进行填充
-
-    # For negative prediction, only need consider back part loss, front part is 0;
-    # target_tensor > zeros <=> z=1, so negative coefficient = 0.
-    neg_p_sub = array_ops.where(y > zeros, zeros, pred)  # negative sample 寻找负样本，并进行填充
-    per_entry_cross_ent = - alpha * (pos_p_sub ** gamma) * tf.log(tf.clip_by_value(pred, 1e-8, 1.0)) \
-                          - (1 - alpha) * (neg_p_sub ** gamma) * tf.log(tf.clip_by_value(1.0 - pred, 1e-8, 1.0))
-    d_lossweight = samples_per_cls[0] / samples_per_cls[1]  # 跟每个数据集标签的变化而变化
-    print(" d_lossweight", d_lossweight)
-    class_weights = tf.constant([1.0, d_lossweight])
-    per_entry_cross_ent_weight = tf.multiply(per_entry_cross_ent,class_weights)
-    return tf.reduce_mean(tf.reduce_sum(per_entry_cross_ent_weight,axis=1))
 
 def DSC_loss(y_pred, y_true): # https://www.cnblogs.com/hotsnow/p/10954624.html
     soomth = 0.5
