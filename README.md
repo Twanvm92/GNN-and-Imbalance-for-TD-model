@@ -1,3 +1,5 @@
 # GNN-and-Imbalance-for-TD-model
 
-Self-Admitted_Technical_Debt_Detection_by_Learning_Its_Comprehensive_Semantics_via_Graph_Neural_Networks
+Self-Admitted Technical Debt Detection by Learning Its Comprehensive Semantics via Graph Neural Networks
+
+1.
