@@ -18,7 +18,7 @@ Dataset:
 
 Everton da S. Maldonado, Emad Shihab, Nikolaos Tsantalis: Using Natural Language Processing to Automatically Detect Self-Admitted Technical Debt. IEEE Trans. Software Eng. 43(11): 1044-1062 (2017)
 
-**If you want to use our model quickly, you can use the test.py file directly and modify the path to the model in the file to get our results quickly. **
+**If you want to use our model quickly, you can use the test.py file directly and modify the path to the model in the file to get our results quickly.**
 
 ## 3. Graph Preparation
 
