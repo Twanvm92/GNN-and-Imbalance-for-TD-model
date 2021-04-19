@@ -46,7 +46,7 @@ If you want to replace the data set, you can use the variable dataset = 'dataset
   python train.py
   ```
 
-If you want to replace the data set, you can use the variable dataset ='dataset name' in the train.py file. There are also a number of parameters that can be modified to suit your needs, such as learning rate, epochs, etc.
+If you want to replace the data set, you can use the variable dataset = 'dataset name' in the train.py file. There are also a number of parameters that can be modified to suit your needs, such as learning rate, epochs, etc.
 
 ## 5. Test
 
