@@ -28,7 +28,7 @@ Everton da S. Maldonado, Emad Shihab, Nikolaos Tsantalis: Using Natural Language
   python remove_words.py 
   ```
 
-If you want to replace the data set, you can use the variable dataset = 'dataset name' in the remove_words.py file. 
+If you want to replace the dataset, you can use the variable dataset = 'dataset name' in the remove_words.py file. 
 
 - build_graph.py
 
@@ -36,7 +36,7 @@ If you want to replace the data set, you can use the variable dataset = 'dataset
   python build_graph.py
   ```
 
-If you want to replace the data set, you can use the variable dataset = 'dataset name' in the build_graph.py file. 
+If you want to replace the dataset, you can use the variable dataset = 'dataset name' in the build_graph.py file. 
 
 ## 4. Train
 
@@ -46,7 +46,7 @@ If you want to replace the data set, you can use the variable dataset = 'dataset
   python train.py
   ```
 
-If you want to replace the data set, you can use the variable dataset = 'dataset name' in the train.py file. There are also a number of parameters that can be modified to suit your needs, such as learning rate, epochs, etc.
+If you want to replace the dataset, you can use the variable dataset = 'dataset name' in the train.py file. There are also a number of parameters that can be modified to suit your needs, such as learning rate, epochs, etc.
 
 ## 5. Test
 
@@ -56,4 +56,4 @@ If you want to replace the data set, you can use the variable dataset = 'dataset
   python test.py
   ```
 
-If you want to replace the data set, you can use the variable dataset = 'dataset name' in the test.py file. 
+If you want to replace the dataset, you can use the variable dataset = 'dataset name' in the test.py file. 
